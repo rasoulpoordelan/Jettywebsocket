@@ -22,7 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 @WebSocket
-public class WebSocketHandler {
+public class MyWebSocketHandler {
 
     private Session session;
     private String myToken;
@@ -54,7 +54,7 @@ public class WebSocketHandler {
 
                     ClientRooms.remove(this.myToken);
                 }
-                WebSocketHandler.Clients.remove(this.myToken);
+                MyWebSocketHandler.Clients.remove(this.myToken);
                 System.out.println("=======delete");
             }
 
@@ -74,7 +74,7 @@ public class WebSocketHandler {
         System.out.println("Connect: " + session.getRemoteAddress().getAddress());
         try {
 
-            WebSocketHandler.Count += 1;
+            MyWebSocketHandler.Count += 1;
             this.session = session;
             // MyWebSocketHandler.Clients.put(this.myUniqueId, this.session);
             //System.out.println(session);
@@ -87,7 +87,7 @@ public class WebSocketHandler {
     }
 
     @OnWebSocketMessage
-    public void onMessage(String message) {
+    public void onMessage(String message) throws IOException {
 
         System.out.println("obj: " + message);
         // ------------------------------------------
@@ -169,7 +169,13 @@ public class WebSocketHandler {
                 RegisterRequestModel objMsgReg = gson.fromJson(gson.toJson(eventObj.getPayload()), RegisterRequestModel.class);
 
                 myToken = objMsgReg.getToken();
-                WebSocketHandler.Clients.put(objMsgReg.getToken(), this.session);
+                MyWebSocketHandler.Clients.put(objMsgReg.getToken(), this.session);
+
+                try {
+                    this.session.getRemote().sendString("{\"Msg\":\"registered\"}");
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
 
                 System.out.println("register user");
                 break;
@@ -177,6 +183,11 @@ public class WebSocketHandler {
             case "registerserver":
                 // current user register in connect
                 Server = this.session;
+                try {
+                    this.session.getRemote().sendString("{\"Msg\":\"server_registered\"}");
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
                 System.out.println("----------------Server Register-------------------");
                 break;
 
@@ -201,6 +212,12 @@ public class WebSocketHandler {
                     HashSet<String> firstRoom = new HashSet<String>();
                     firstRoom.add(objMsgJoin.getRoom());
                     ClientRooms.put(objMsgJoin.getToken(), firstRoom);
+                }
+
+                try {
+                    this.session.getRemote().sendString("{\"Msg\":\"joined\"}");
+                } catch (IOException e) {
+                    System.out.println(e.getMessage());
                 }
 
                 // pring room client
